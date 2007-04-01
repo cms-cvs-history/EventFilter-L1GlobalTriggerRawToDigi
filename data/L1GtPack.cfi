@@ -1,0 +1,17 @@
+module L1GtPack = L1GTDigiToRaw {
+ 
+    // input tag for GT readout collection: 
+    //     L1GtEmul = GT emulator, 
+    //     L1GtUnpack = GT unpacker 
+    untracked InputTag DaqGtInputTag = L1GtEmul
+    
+    // flag to keep or change the active boards
+    bool KeepActiveBoardsStatus = true
+
+    // list of active boards (actually 16 bits)
+    //     if KeepActiveBoardsStatus = true, the value 
+    //     from GTFE is taken, and not the parameter from here
+    uint32 ActiveBoards = 0xFFFF;
+
+
+}

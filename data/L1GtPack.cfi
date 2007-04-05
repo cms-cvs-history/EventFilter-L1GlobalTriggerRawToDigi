@@ -11,7 +11,7 @@ module L1GtPack = L1GTDigiToRaw {
     // list of active boards (actually 16 bits)
     //     if KeepActiveBoardsStatus = true, the value 
     //     from GTFE is taken, and not the parameter from here
-    uint32 ActiveBoards = 0xFFFF;
+    uint32 ActiveBoards = 0xFFFF
 
 
 }

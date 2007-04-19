@@ -5,13 +5,10 @@ module L1GtPack = L1GTDigiToRaw {
     //     L1GtUnpack = GT unpacker 
     untracked InputTag DaqGtInputTag = L1GtEmul
     
-    // flag to keep or change the active boards
-    bool KeepActiveBoardsStatus = true
-
-    // list of active boards (actually 16 bits)
-    //     if KeepActiveBoardsStatus = true, the value 
-    //     from GTFE is taken, and not the parameter from here
-    uint32 ActiveBoards = 0xFFFF
+    /// mask for active boards (actually 16 bits)
+    //      if bit is zero, the corresponding board will not be packed
+    //      default: all boards active
+    uint32 ActiveBoardsMask = 0xFFFF
 
 
 }

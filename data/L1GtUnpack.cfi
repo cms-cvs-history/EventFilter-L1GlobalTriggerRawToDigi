@@ -1,5 +1,14 @@
 module L1GtUnpack = L1GlobalTriggerRawToDigi {
  
-    // empty now
+    // input tag for GT readout collection: 
+    //     L1GtEmul = hardware record, 
+    //     L1GtPack = GT packer (DigiToRaw) 
+    untracked InputTag DaqGtInputTag = L1GtPack
+    
+    /// mask for active boards (actually 16 bits)
+    //      if bit is zero, the corresponding board will not be unpacked
+    //      default: all boards active
+    uint32 ActiveBoardsMask = 0xFFFF
+
 
 }

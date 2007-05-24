@@ -3,7 +3,9 @@
 
 #include "EventFilter/L1GlobalTriggerRawToDigi/interface/L1GTDigiToRaw.h"
 #include "EventFilter/L1GlobalTriggerRawToDigi/interface/L1GlobalTriggerRawToDigi.h"
+#include "EventFilter/L1GlobalTriggerRawToDigi/interface/L1GtTextToRaw.h"
 
 DEFINE_SEAL_MODULE();
 DEFINE_ANOTHER_FWK_MODULE(L1GTDigiToRaw);
 DEFINE_ANOTHER_FWK_MODULE(L1GlobalTriggerRawToDigi);
+DEFINE_ANOTHER_FWK_MODULE(L1GtTextToRaw);

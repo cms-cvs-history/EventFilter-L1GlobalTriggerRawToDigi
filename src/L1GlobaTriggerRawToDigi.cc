@@ -453,6 +453,7 @@ void L1GlobalTriggerRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup
                         unpackGMT(ptrGt,gmtrc);
                     }
 
+                    // FIXME 17 words
                     // 16*64/8 TODO FIXME ask Ivan for a getSize() function for GMT record
                     unsigned int gmtRecordSize = 128;
                     unsigned int gmtCollSize = m_totalBxInEvent*gmtRecordSize;

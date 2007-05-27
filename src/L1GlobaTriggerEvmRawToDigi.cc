@@ -600,7 +600,7 @@ void L1GlobalTriggerEvmRawToDigi::unpackFDL(
 
         fdlWord.setGtDecisionWordExtended(payload[iWord], iWord);
 
-        fdlWord.setN0Algo(payload[iWord], iWord);
+        fdlWord.setNoAlgo(payload[iWord], iWord);
         fdlWord.setFinalOR(payload[iWord], iWord);
 
         fdlWord.setLocalBxNr(payload[iWord], iWord);

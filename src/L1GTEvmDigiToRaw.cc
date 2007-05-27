@@ -531,7 +531,7 @@ void L1GTEvmDigiToRaw::packFDL(
 
         fdlBlock.setGtDecisionWordExtendedWord64(tmpWord64[iWord], iWord);
 
-        fdlBlock.setN0AlgoWord64(tmpWord64[iWord], iWord);
+        fdlBlock.setNoAlgoWord64(tmpWord64[iWord], iWord);
         fdlBlock.setFinalORWord64(tmpWord64[iWord], iWord);
 
         fdlBlock.setLocalBxNrWord64(tmpWord64[iWord], iWord);

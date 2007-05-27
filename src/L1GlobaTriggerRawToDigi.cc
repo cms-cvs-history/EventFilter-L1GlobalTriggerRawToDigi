@@ -190,6 +190,16 @@ void L1GlobalTriggerRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup
 
             // unpack GTFE
             unpackGTFE(evSetup, ptrGt, m_gtfeWord);
+
+            if ( edm::isDebugEnabled() ) {
+
+                std::ostringstream myCoutStream;
+                m_gtfeWord->print(myCoutStream);
+                LogTrace("L1GlobalTriggerRawToDigi")
+                << myCoutStream.str() << "\n"
+                << std::endl;
+            }
+
             gtfeKey = itRecord->first;
 
             break; // there is only one GTFE block
@@ -404,6 +414,15 @@ void L1GlobalTriggerRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup
                                 // add FDL block to GT readout record
                                 gtReadoutRecord->setGtFdlWord(*m_gtFdlWord, iBxInEvent);
 
+                                if ( edm::isDebugEnabled() ) {
+
+                                    std::ostringstream myCoutStream;
+                                    m_gtFdlWord->print(myCoutStream);
+                                    LogTrace("L1GlobalTriggerRawToDigi")
+                                    << myCoutStream.str() << "\n"
+                                    << std::endl;
+                                }
+
                                 // ... and reset it
                                 m_gtFdlWord->reset();
                             }
@@ -465,12 +484,11 @@ void L1GlobalTriggerRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup
                         unpackGMT(ptrGt,gmtrc);
                     }
 
-                    // FIXME 17 words
-                    // 16*64/8 TODO FIXME ask Ivan for a getSize() function for GMT record
-                    unsigned int gmtRecordSize = 128;
+                    // 17*64/8 TODO FIXME ask Ivan for a getSize() function for GMT record
+                    unsigned int gmtRecordSize = 136;
                     unsigned int gmtCollSize = m_totalBxInEvent*gmtRecordSize;
 
-                    ptrGt += gmtCollSize; // advance with PSB block size
+                    ptrGt += gmtCollSize; // advance with GMT block size
                 }
                 break;
             default: {
@@ -609,7 +627,7 @@ void L1GlobalTriggerRawToDigi::unpackFDL(
 
         fdlWord.setGtDecisionWordExtended(payload[iWord], iWord);
 
-        fdlWord.setN0Algo(payload[iWord], iWord);
+        fdlWord.setNoAlgo(payload[iWord], iWord);
         fdlWord.setFinalOR(payload[iWord], iWord);
 
         fdlWord.setLocalBxNr(payload[iWord], iWord);

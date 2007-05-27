@@ -251,8 +251,8 @@ void L1GTDigiToRaw::produce(edm::Event& iEvent, const edm::EventSetup& evSetup)
                 }
                 break;
             case GMT: {
-                    // 16*64/8 TODO FIXME ask Ivan for a getSize() function for GMT record
-                    unsigned int gmtRecordSize = 128;
+                    // 17*64/8 TODO FIXME ask Ivan for a getSize() function for GMT record
+                    unsigned int gmtRecordSize = 136;
                     unsigned int gmtCollSize = m_totalBxInEvent*gmtRecordSize;
                     gtDataSize += gmtCollSize;
                 }
@@ -300,7 +300,18 @@ void L1GTDigiToRaw::produce(edm::Event& iEvent, const edm::EventSetup& evSetup)
             itRecord != recordMap.end(); ++itRecord) {
 
         if (itRecord->first == gtfeKey) {
+
             packGTFE(evSetup, ptrGt, gtfeBlock, activeBoardsGt);
+
+            if ( edm::isDebugEnabled() ) {
+
+                std::ostringstream myCoutStream;
+                gtfeBlock.print(myCoutStream);
+                LogTrace("L1GTDigiToRaw")
+                << myCoutStream.str() << "\n"
+                << std::endl;
+            }
+
             ptrGt += gtfeBlock.getSize(); // advance with GTFE block size
 
             continue;
@@ -344,8 +355,19 @@ void L1GTDigiToRaw::produce(edm::Event& iEvent, const edm::EventSetup& evSetup)
 
                     for (int iBxInEvent = m_minBxInEvent; iBxInEvent <= m_maxBxInEvent;
                             ++iBxInEvent) {
+                        
                         L1GtFdlWord fdlBlock = gtReadoutRecord->gtFdlWord(iBxInEvent);
                         packFDL(evSetup, ptrGt, fdlBlock);
+
+                        if ( edm::isDebugEnabled() ) {
+
+                            std::ostringstream myCoutStream;
+                            fdlBlock.print(myCoutStream);
+                            LogTrace("L1GTDigiToRaw")
+                            << myCoutStream.str() << "\n"
+                            << std::endl;
+                        }
+                        
                         ptrGt += fdlBlock.getSize(); // advance with FDL block size
                     }
 
@@ -363,6 +385,7 @@ void L1GTDigiToRaw::produce(edm::Event& iEvent, const edm::EventSetup& evSetup)
 
                     for (int iBxInEvent = m_minBxInEvent; iBxInEvent <= m_maxBxInEvent;
                             ++iBxInEvent) {
+
                         L1GtPsbWord psbBlock =
                             gtReadoutRecord->gtPsbWord(boardIdValue, iBxInEvent);
 
@@ -542,7 +565,7 @@ void L1GTDigiToRaw::packFDL(
 
         fdlBlock.setGtDecisionWordExtendedWord64(tmpWord64[iWord], iWord);
 
-        fdlBlock.setN0AlgoWord64(tmpWord64[iWord], iWord);
+        fdlBlock.setNoAlgoWord64(tmpWord64[iWord], iWord);
         fdlBlock.setFinalORWord64(tmpWord64[iWord], iWord);
 
         fdlBlock.setLocalBxNrWord64(tmpWord64[iWord], iWord);
@@ -652,7 +675,7 @@ unsigned int L1GTDigiToRaw::packGmtCollection(
 unsigned L1GTDigiToRaw::packGMT(L1MuGMTReadoutRecord const& gmtrr, unsigned char* chp)
 {
 
-    const unsigned SIZE=128;
+    const unsigned SIZE=136;
     memset(chp,0,SIZE);
 
     unsigned* p = (unsigned*) chp;

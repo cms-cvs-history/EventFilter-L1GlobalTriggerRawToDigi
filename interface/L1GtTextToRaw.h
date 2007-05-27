@@ -65,14 +65,17 @@ private:
 
 private:
 
+    /// file type for the text file
+    std::string m_textFileType;
+
+    /// file name for the text file
+    std::string m_textFileName;
+
     /// raw event size (including header and trailer) in units of 8 bits
     int m_rawDataSize;
 
     /// FED ID for the system
     int m_fedId;
-
-    /// file name for the text file
-    std::string m_textFileName;
 
     /// the file itself
     std::ifstream m_textFile;

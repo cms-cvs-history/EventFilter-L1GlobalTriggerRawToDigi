@@ -20,6 +20,7 @@
 // system include files
 #include <vector>
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 
 #include <boost/cstdint.hpp>
@@ -57,6 +58,18 @@
 L1GtTextToRaw::L1GtTextToRaw(const edm::ParameterSet& pSet)
 {
 
+    m_textFileType = pSet.getUntrackedParameter<std::string>("TextFileType", "VmeSpyDump");
+
+    LogDebug("L1GtTextToRaw")
+    << "\nText file type: " << m_textFileType << "\n"
+    << std::endl;
+
+    m_textFileName = pSet.getUntrackedParameter<std::string>("TextFileName", "gtfe.dmp");
+
+    LogDebug("L1GtTextToRaw")
+    << "\nText file name: " << m_textFileName << "\n"
+    << std::endl;
+
     // event size
     m_rawDataSize = pSet.getUntrackedParameter<int>("RawDataSize");
 
@@ -72,11 +85,6 @@ L1GtTextToRaw::L1GtTextToRaw(const edm::ParameterSet& pSet)
     << "\nFED Id: " << m_fedId << "\n"
     << std::endl;
 
-    m_textFileName = pSet.getUntrackedParameter<std::string>("TextFileName", "gtfe.dmp");
-
-    LogDebug("L1GtTextToRaw")
-    << "\nText file name: " << m_textFileName << "\n"
-    << std::endl;
 
     // open test file
     m_textFile.open(m_textFileName.c_str(), std::ios::in);
@@ -85,7 +93,6 @@ L1GtTextToRaw::L1GtTextToRaw(const edm::ParameterSet& pSet)
         << "\nError: failed to open text file = " << m_textFileName << "\n"
         << std::endl;
     }
-
 
     //
     produces<FEDRawDataCollection>();
@@ -157,12 +164,9 @@ void L1GtTextToRaw::produce(edm::Event& iEvent, const edm::EventSetup& evSetup)
 
     }
 
-
     // define new FEDRawDataCollection
     // it contains ALL FEDs in an event
     std::auto_ptr<FEDRawDataCollection> fedRawColl(new FEDRawDataCollection);
-
-    // ptrGt: pointer to the beginning of GT record in the raw data
 
     FEDRawData& rawData = fedRawColl->FEDData(m_fedId);
     // resize, GT raw data record has variable length,
@@ -175,33 +179,48 @@ void L1GtTextToRaw::produce(edm::Event& iEvent, const edm::EventSetup& evSetup)
     << std::endl;
 
 
-    // read file
+    // read the text file
+    // the file must have one 64 bits per line (usually in hex format)
+    // events are separated by empty lines
+    
     std::string lineString;
+
+    boost::uint64_t lineInt = 0ULL;
+    int sizeL = sizeof(lineInt);
+
+    int fedBlockSize = 8; // block size in bits for FedRawData
+    int maskBlock = 0xff; // fedBlockSize and maskBlock must be consistent
+
     int iLine = 0;
 
-    while (m_textFile >> lineString && lineString != "" && iLine < rawDataSize/4 ) {
+    while (std::getline(m_textFile, lineString)) {
+
+        if (lineString.empty()) {
+            break;
+        }
 
         // convert string to int
         std::istringstream iss(lineString);
-        boost::uint64_t lineInt = 0ULL;
-        int sizeL = sizeof(lineInt);
-        
+
         iss >> std::hex >> lineInt;
+
+        LogTrace("L1GtTextToRaw")
+        << std::dec << std::setw(4) << std::setfill('0') << iLine << ": " 
+        << std::hex << std::setw(sizeL*2) << lineInt 
+        << std::dec << std::setfill(' ')
+        << std::endl;
 
         // copy data
         for (int j = 0; j < sizeL; j++) {
-            if ( (iLine*sizeL + j) < rawDataSize ) {
-                char c = (lineInt >> (8*j)) & 0xff;
-                rawData.data()[iLine*sizeL + j] = c;
-            }
+            char blockContent = (lineInt >> (fedBlockSize * j)) & maskBlock;
+            rawData.data()[iLine*sizeL + j] = blockContent;
         }
+
 
         ++iLine;
     }
 
-
     // put the raw data in the event
-
     iEvent.put(fedRawColl);
 }
 

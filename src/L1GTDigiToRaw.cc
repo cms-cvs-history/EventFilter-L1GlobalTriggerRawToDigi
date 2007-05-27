@@ -353,10 +353,31 @@ void L1GTDigiToRaw::produce(edm::Event& iEvent, const edm::EventSetup& evSetup)
                 break;
             case PSB: {
 
+                    boost::uint16_t boardIdValue = itRecord->second.boardId();
+
+                    LogDebug("L1GTDigiToRaw")
+                    << "\nBoard of type " << itRecord->second.boardType
+                    << " with index "  << itRecord->second.boardIndex
+                    << " has the boardId " << std::hex << boardIdValue << std::dec << "\n"
+                    << std::endl;
+
                     for (int iBxInEvent = m_minBxInEvent; iBxInEvent <= m_maxBxInEvent;
                             ++iBxInEvent) {
-                        L1GtPsbWord psbBlock = gtReadoutRecord->gtPsbWord(iBxInEvent);
+                        L1GtPsbWord psbBlock =
+                            gtReadoutRecord->gtPsbWord(boardIdValue, iBxInEvent);
+
                         packPSB(evSetup, ptrGt, psbBlock);
+
+                        if ( edm::isDebugEnabled() ) {
+
+                            std::ostringstream myCoutStream;
+                            psbBlock.print(myCoutStream);
+                            LogTrace("L1GTDigiToRaw")
+                            << myCoutStream.str() << "\n"
+                            << std::endl;
+                        }
+
+
                         ptrGt += psbBlock.getSize(); // advance with PSB block size
                     }
 

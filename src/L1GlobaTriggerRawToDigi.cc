@@ -429,11 +429,23 @@ void L1GlobalTriggerRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup
 
                                 unpackPSB(evSetup, ptrGt, *m_gtPsbWord);
 
-                                // get bxInEvent
+                                // get bxInEvent for the PSB
                                 const int iBxInEvent = m_gtPsbWord->bxInEvent();
 
+                                // get boardID
+                                const boost::uint16_t boardIdValue = m_gtPsbWord->boardId();
+
                                 // add PSB block to GT readout record
-                                gtReadoutRecord->setGtPsbWord(*m_gtPsbWord, iBxInEvent);
+                                gtReadoutRecord->setGtPsbWord(*m_gtPsbWord, boardIdValue, iBxInEvent);
+
+                                if ( edm::isDebugEnabled() ) {
+
+                                    std::ostringstream myCoutStream;
+                                    m_gtPsbWord->print(myCoutStream);
+                                    LogTrace("L1GlobalTriggerRawToDigi")
+                                    << myCoutStream.str() << "\n"
+                                    << std::endl;
+                                }
 
                                 // ... and reset it
                                 m_gtPsbWord->reset();
@@ -736,7 +748,7 @@ void L1GlobalTriggerRawToDigi::unpackTrailer(
 
         std::ostringstream myCoutStream;
 
-        myCoutStream << "   Event_length:  " << cmsTrailer.lenght() << std::endl; 
+        myCoutStream << "   Event_length:  " << cmsTrailer.lenght() << std::endl;
         myCoutStream << "   CRC:           " << cmsTrailer.crc() << std::endl;
         myCoutStream << "   Event_stat:    " << cmsTrailer.evtStatus() << std::endl;
         myCoutStream << "   TTS_bits:      " << cmsTrailer.ttsBits() << std::endl;

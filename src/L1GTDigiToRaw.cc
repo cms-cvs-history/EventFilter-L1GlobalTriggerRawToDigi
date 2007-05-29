@@ -116,6 +116,17 @@ void L1GTDigiToRaw::produce(edm::Event& iEvent, const edm::EventSetup& evSetup)
     edm::Handle<L1GlobalTriggerReadoutRecord> gtReadoutRecord;
     iEvent.getByLabel(m_daqGtInputTag.label(), gtReadoutRecord);
 
+    if ( edm::isDebugEnabled() ) {
+        std::ostringstream myCoutStream;
+        gtReadoutRecord->print(myCoutStream);
+        LogTrace("L1GTDigiToRaw")
+        << "\n The following L1 GT DAQ readout record will be packed.\n"
+        << " Some boards could be disabled before packing," 
+        << " see detailed board packing.\n"
+        << myCoutStream.str() << "\n"
+        << std::endl;
+    }
+
     //
     L1GlobalTriggerReadoutSetup tmpGtSetup; // TODO FIXME temporary event setup
     std::map<int, L1GlobalTriggerReadoutSetup::GtBoard> recordMap =
@@ -355,7 +366,7 @@ void L1GTDigiToRaw::produce(edm::Event& iEvent, const edm::EventSetup& evSetup)
 
                     for (int iBxInEvent = m_minBxInEvent; iBxInEvent <= m_maxBxInEvent;
                             ++iBxInEvent) {
-                        
+
                         L1GtFdlWord fdlBlock = gtReadoutRecord->gtFdlWord(iBxInEvent);
                         packFDL(evSetup, ptrGt, fdlBlock);
 
@@ -367,7 +378,7 @@ void L1GTDigiToRaw::produce(edm::Event& iEvent, const edm::EventSetup& evSetup)
                             << myCoutStream.str() << "\n"
                             << std::endl;
                         }
-                        
+
                         ptrGt += fdlBlock.getSize(); // advance with FDL block size
                     }
 

@@ -779,67 +779,87 @@ void L1GlobalTriggerRawToDigi::unpackPSB(
 
 // unpack the GMT record
 void L1GlobalTriggerRawToDigi::unpackGMT(
-    const unsigned char* chp,
-    std::auto_ptr<L1MuGMTReadoutCollection>& gmtrc)
+                                         const unsigned char* chp,
+                                         std::auto_ptr<L1MuGMTReadoutCollection>& gmtrc)
 {
 
-    LogDebug("L1GlobalTriggerRawToDigi")
+  LogDebug("L1GlobalTriggerRawToDigi")
     << "\nUnpacking GMT collection.\n"
     << std::endl;
 
-    const unsigned* p = (const unsigned*) chp;
+  const unsigned* p = (const unsigned*) chp;
 
-    // min Bx's in the event, computed after m_totalBxInEvent is obtained from GTFE block
-    // assume symmetrical number of BX around L1Accept
-    int iBxInEvent = (m_totalBxInEvent + 1)/2 - m_totalBxInEvent;
+  // min Bx's in the event, computed after m_totalBxInEvent is obtained from GTFE block
+  // assume symmetrical number of BX around L1Accept
+  int iBxInEvent = (m_totalBxInEvent + 1)/2 - m_totalBxInEvent;
 
-    for (int iGmtRec = 0; iGmtRec < m_totalBxInEvent; ++iGmtRec) {
+  for (int iGmtRec = 0; iGmtRec < m_totalBxInEvent; ++iGmtRec) {
 
-        // unpack only bxInEvent requested, otherwise skip it
-        if (
-            (iGmtRec >= m_lowSkipBxInEvent) &&
-            (iGmtRec <  m_uppSkipBxInEvent) ) {
+    // unpack only bxInEvent requested, otherwise skip it
+    if (
+        (iGmtRec >= m_lowSkipBxInEvent) &&
+        (iGmtRec <  m_uppSkipBxInEvent) ) {
 
-            L1MuGMTReadoutRecord gmtrr(iBxInEvent);
-
-            gmtrr.setEvNr((*p)&0xffffff);
-            gmtrr.setBCERR(((*p)>>24)&0xff);
-            p++;
-
-            gmtrr.setBxNr((*p)&0xfff);
-            gmtrr.setBxInEvent(((*p)>>12)&0xf);
-            // to do: check here the block length and the board id
-            p++;
-
-            for(int im=0; im<16; im++) {
-                gmtrr.setInputCand(im,*p++);
-            }
-
-            unsigned char* prank = (unsigned char*) (p+12);
-
-            for(int im=0; im<4; im++) {
-                gmtrr.setGMTBrlCand(im, *p++, *prank++);
-            }
-
-            for(int im=0; im<4; im++) {
-                gmtrr.setGMTFwdCand(im, *p++, *prank++);
-            }
-
-            for(int im=0; im<4; im++) {
-                gmtrr.setGMTCand(im, *p++);
-            }
-
-            // skip the two sort rank words
-            p+=2;
-
-            gmtrc->addRecord(gmtrr);
-
-        }
-
-        // increase the BxInEvent number
-        iBxInEvent++;
+      // Dump the block
+      const boost::uint64_t* bp =
+        reinterpret_cast<boost::uint64_t*>(const_cast<unsigned char*>(chp));
+      for(int iWord=0; iWord<17; iWord++) {
+        LogTrace("L1GlobalTriggerRawToDigi")
+          << std::setw(4) << iWord << "  "
+          << std::hex << std::setfill('0')
+          << std::setw(16) << *bp++
+          << std::dec << std::setfill(' ')
+          << std::endl;
+      }
+	
+      L1MuGMTReadoutRecord gmtrr(iBxInEvent);
+	
+      gmtrr.setEvNr((*p)&0xffffff);
+      gmtrr.setBCERR(((*p)>>24)&0xff);
+      p++;
+	
+      gmtrr.setBxNr((*p)&0xfff);
+      if(((*p)>>15)&1) {
+        gmtrr.setBxInEvent((((*p)>>12)&7)-8);
+      } else {
+        gmtrr.setBxInEvent((((*p)>>12)&7));
+      }
+      // to do: check here the block length and the board id
+      p++;
+	
+      for(int im=0; im<16; im++) {
+        // flip the pt and quality bits -- this should better be done by GMT input chips
+        unsigned waux = *p++;
+        unsigned waux2 = ~((waux>>8)&0xff);
+        waux = (waux&0xff00ff) | (waux2<<8);
+        gmtrr.setInputCand(im,waux);
+      }
+	
+      unsigned char* prank = (unsigned char*) (p+12);
+	
+      for(int im=0; im<4; im++) {
+        gmtrr.setGMTBrlCand(im, *p++, *prank++);
+      }
+	
+      for(int im=0; im<4; im++) {
+        gmtrr.setGMTFwdCand(im, *p++, *prank++);
+      }
+	
+      for(int im=0; im<4; im++) {
+        gmtrr.setGMTCand(im, *p++);
+      }
+	
+      // skip the two sort rank words and two chip BX words
+      p+=4;
+	
+      gmtrc->addRecord(gmtrr);
 
     }
+
+    // increase the BxInEvent number
+    iBxInEvent++;
+        
+  }
 }
 
 // unpack trailer word

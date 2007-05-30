@@ -71,9 +71,6 @@ private:
     /// records for inactive boards are not written in the GT DAQ record
     void unpackGTFE(const edm::EventSetup&, const unsigned char*, L1GtfeWord*);
 
-    /// unpack FDL blocks for various bunch crosses
-    void unpackFDL(const edm::EventSetup&, const unsigned char*, L1GtFdlWord&);
-
     /// unpack PSB blocks
     /// unpacking is done in PSB class format
     /// methods are given later to translate from the PSB format

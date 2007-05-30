@@ -72,9 +72,6 @@ private:
     /// unpack TCS block
     void unpackTCS(const edm::EventSetup&, const unsigned char*, L1TcsWord&);
 
-    /// unpack FDL blocks for various bunch crosses
-    void unpackFDL(const edm::EventSetup&, const unsigned char*, L1GtFdlWord&);
-
     /// unpack trailer word
     void unpackTrailer(const unsigned char*, FEDTrailer&);
 

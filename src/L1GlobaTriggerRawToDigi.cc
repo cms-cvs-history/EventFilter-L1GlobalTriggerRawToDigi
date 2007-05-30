@@ -488,8 +488,8 @@ void L1GlobalTriggerRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup
                             if (
                                 (iFdl >= m_lowSkipBxInEvent) &&
                                 (iFdl <  m_uppSkipBxInEvent) ) {
-
-                                unpackFDL(evSetup, ptrGt, *m_gtFdlWord);
+                                
+                                m_gtFdlWord->unpack(ptrGt);
 
                                 // get bxInEvent
                                 const int iBxInEvent = m_gtFdlWord->bxInEvent();
@@ -678,58 +678,6 @@ void L1GlobalTriggerRawToDigi::unpackGTFE(
 
 }
 
-// unpack FDL records for various bunch crosses
-// fdlPtr pointer to the beginning of the each FDL block obtained from gtPtr
-void L1GlobalTriggerRawToDigi::unpackFDL(
-    const edm::EventSetup& evSetup,
-    const unsigned char* fdlPtr,
-    L1GtFdlWord& fdlWord)
-{
-
-    LogDebug("L1GlobalTriggerRawToDigi")
-    << "\nUnpacking FDL block.\n"
-    << std::endl;
-
-    int uLength = L1GlobalTriggerReadoutSetup::UnitLength;
-
-    int fdlSize = fdlWord.getSize();
-    int fdlWords = fdlSize/uLength;
-
-    const boost::uint64_t* payload =
-        reinterpret_cast<boost::uint64_t*>(const_cast<unsigned char*>(fdlPtr));
-
-    for (int iWord = 0; iWord < fdlWords; ++iWord) {
-
-        // fill FDL
-        // the second argument must match the word index defined in L1GtFdlWord class
-
-        fdlWord.setBoardId(payload[iWord], iWord);
-        fdlWord.setBxInEvent(payload[iWord], iWord);
-        fdlWord.setBxNr(payload[iWord], iWord);
-        fdlWord.setEventNr(payload[iWord], iWord);
-
-        fdlWord.setGtTechnicalTriggerWord(payload[iWord], iWord);
-
-        fdlWord.setGtDecisionWordA(payload[iWord], iWord);
-
-        fdlWord.setGtDecisionWordB(payload[iWord], iWord);
-
-        fdlWord.setGtDecisionWordExtended(payload[iWord], iWord);
-
-        fdlWord.setNoAlgo(payload[iWord], iWord);
-        fdlWord.setFinalOR(payload[iWord], iWord);
-
-        fdlWord.setLocalBxNr(payload[iWord], iWord);
-
-        LogTrace("L1GlobalTriggerRawToDigi")
-        << std::setw(4) << iWord << "  "
-        << std::hex << std::setfill('0')
-        << std::setw(16) << payload[iWord]
-        << std::dec << std::setfill(' ')
-        << std::endl;
-    }
-
-}
 
 // unpack PSB records
 // psbPtr pointer to the beginning of the each PSB block obtained from gtPtr

@@ -69,6 +69,16 @@ L1GlobalTriggerRawToDigi::L1GlobalTriggerRawToDigi(const edm::ParameterSet& pSet
     << m_daqGtInputTag.label() << " \n"
     << std::endl;
 
+    // FED Id for GT DAQ record
+    // default value defined in DataFormats/FEDRawData/src/FEDNumbering.cc
+    m_daqGtFedId = pSet.getUntrackedParameter<int>(
+                       "DaqGtFedId", FEDNumbering::getTriggerGTPFEDIds().second);
+
+    LogDebug("L1GlobalTriggerRawToDigi")
+    << "\nFED Id for DAQ GT record: "
+    << m_daqGtFedId << " \n"
+    << std::endl;
+
     // mask for active boards
     m_activeBoardsMaskGt = pSet.getParameter<unsigned int>("ActiveBoardsMask");
 
@@ -141,7 +151,7 @@ void L1GlobalTriggerRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup
 
     // retrieve data for Global Trigger FED (GT + GMT)
     const FEDRawData& raw =
-        (fedHandle.product())->FEDData(FEDNumbering::getTriggerGTPFEDIds().first);
+        (fedHandle.product())->FEDData(m_daqGtFedId);
 
     int gtSize = raw.size();
     LogDebug("L1GlobalTriggerRawToDigi")
@@ -189,7 +199,7 @@ void L1GlobalTriggerRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup
         if (itRecord->second.boardType == GTFE) {
 
             // unpack GTFE
-            unpackGTFE(evSetup, ptrGt, m_gtfeWord);
+            m_gtfeWord->unpack(ptrGt);
 
             if ( edm::isDebugEnabled() ) {
 
@@ -275,7 +285,8 @@ void L1GlobalTriggerRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup
         << std::endl;
 
         // change RecordLength
-        m_gtfeWord->setRecordLength(m_unpackBxInEvent);
+        // cast int to boost::uint16_t (there are normally 3 or 5 BxInEvent)
+        m_gtfeWord->setRecordLength(static_cast<boost::uint16_t>(m_unpackBxInEvent));
 
     } else {
 
@@ -289,7 +300,8 @@ void L1GlobalTriggerRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup
         << std::endl;
 
         // change RecordLength
-        m_gtfeWord->setRecordLength(m_unpackBxInEvent);
+        // cast int to boost::uint16_t (there are normally 3 or 5 BxInEvent)
+        m_gtfeWord->setRecordLength(static_cast<boost::uint16_t>(m_unpackBxInEvent));
 
     }
 
@@ -488,7 +500,7 @@ void L1GlobalTriggerRawToDigi::produce(edm::Event& iEvent, const edm::EventSetup
                             if (
                                 (iFdl >= m_lowSkipBxInEvent) &&
                                 (iFdl <  m_uppSkipBxInEvent) ) {
-                                
+
                                 m_gtFdlWord->unpack(ptrGt);
 
                                 // get bxInEvent
@@ -614,63 +626,77 @@ void L1GlobalTriggerRawToDigi::unpackHeader(
     // print the header info
     if ( edm::isDebugEnabled() ) {
 
+        const boost::uint64_t* payload =
+            reinterpret_cast<boost::uint64_t*>(const_cast<unsigned char*>(gtPtr));
+
         std::ostringstream myCoutStream;
 
+        // one word only
+        int iWord = 0;
+
         myCoutStream
-        << "   Event_type (hex): " << std::hex << cmsHeader.triggerType()
-        << std::dec << std::endl;
-        myCoutStream << "   LVL1_Id:   " << cmsHeader.lvl1ID() << std::endl;
-        myCoutStream << "   BX_Id:     " << cmsHeader.bxID() << std::endl;
-        myCoutStream << "   Source_Id: " << cmsHeader.sourceID() << std::endl;
-        myCoutStream << "   FOV:       " << cmsHeader.version() << std::endl;
-        myCoutStream << "   H:         " << cmsHeader.moreHeaders() << std::endl;
-        LogDebug("L1GlobalTriggerRawToDigi")
-        << "\n CMS Header \n" << myCoutStream.str() << "\n"
-        << std::endl;
-
-    }
-
-
-}
-
-
-// unpack the GTFE record
-// gtfePtr pointer to the beginning of the GTFE block, obtained from gtPtr
-void L1GlobalTriggerRawToDigi::unpackGTFE(
-    const edm::EventSetup& evSetup,
-    const unsigned char* gtfePtr,
-    L1GtfeWord* gtfeWord)
-{
-
-    LogDebug("L1GlobalTriggerRawToDigi")
-    << "\nUnpacking GTFE block.\n"
-    << std::endl;
-
-    int uLength = L1GlobalTriggerReadoutSetup::UnitLength;
-
-    int gtfeSize = gtfeWord->getSize();
-    int gtfeWords = gtfeSize/uLength;
-
-    const boost::uint64_t* payload =
-        reinterpret_cast<boost::uint64_t*>(const_cast<unsigned char*>(gtfePtr));
-
-    for (int iWord = 0; iWord < gtfeWords; ++iWord) {
-
-        // fill GTFE
-        // the second argument must match the word index defined in L1GtfeWord class
-
-        gtfeWord->setBoardId(payload[iWord], iWord);
-        gtfeWord->setRecordLength(payload[iWord], iWord);
-        gtfeWord->setBxNr(payload[iWord], iWord);
-        gtfeWord->setSetupVersion(payload[iWord], iWord);
-        gtfeWord->setActiveBoards(payload[iWord], iWord);
-        gtfeWord->setTotalTriggerNr(payload[iWord], iWord);
-
-        LogTrace("L1GlobalTriggerRawToDigi")
         << std::setw(4) << iWord << "  "
         << std::hex << std::setfill('0')
         << std::setw(16) << payload[iWord]
-        << std::dec << std::setfill(' ')
+        << std::dec << std::setfill(' ') << "\n"
+        << std::endl;
+
+        myCoutStream
+        << "  Event_type:  "
+        << std::hex << " hex: " << "     "
+        << std::setw(1) << std::setfill('0') << cmsHeader.triggerType()
+        << std::setfill(' ')
+        << std::dec << " dec: "
+        << cmsHeader.triggerType()
+        << std::endl;
+
+        myCoutStream
+        << "  LVL1_Id:     "
+        << std::hex << " hex: " << ""
+        << std::setw(6) << std::setfill('0') << cmsHeader.lvl1ID()
+        << std::setfill(' ')
+        << std::dec << " dec: "
+        << cmsHeader.lvl1ID()
+        << std::endl;
+
+        myCoutStream
+        << "  BX_Id:       "
+        << std::hex << " hex: " << "   "
+        << std::setw(3) << std::setfill('0') << cmsHeader.bxID()
+        << std::setfill(' ')
+        << std::dec << " dec: "
+        << cmsHeader.bxID()
+        << std::endl;
+
+        myCoutStream
+        << "  Source_Id:   "
+        << std::hex << " hex: " << "   "
+        << std::setw(3) << std::setfill('0') << cmsHeader.sourceID()
+        << std::setfill(' ')
+        << std::dec << " dec: "
+        << cmsHeader.sourceID()
+        << std::endl;
+
+        myCoutStream
+        << "  FOV:         "
+        << std::hex << " hex: " << "     "
+        << std::setw(1) << std::setfill('0') << cmsHeader.version()
+        << std::setfill(' ')
+        << std::dec << " dec: "
+        << cmsHeader.version()
+        << std::endl;
+
+        myCoutStream
+        << "  H:           "
+        << std::hex << " hex: " << "     "
+        << std::setw(1) << std::setfill('0') << cmsHeader.moreHeaders()
+        << std::setfill(' ')
+        << std::dec << " dec: "
+        << cmsHeader.moreHeaders()
+        << std::endl;
+
+        LogDebug("L1GlobalTriggerRawToDigi")
+        << "\n CMS Header \n" << myCoutStream.str() << "\n"
         << std::endl;
 
     }
@@ -727,87 +753,87 @@ void L1GlobalTriggerRawToDigi::unpackPSB(
 
 // unpack the GMT record
 void L1GlobalTriggerRawToDigi::unpackGMT(
-                                         const unsigned char* chp,
-                                         std::auto_ptr<L1MuGMTReadoutCollection>& gmtrc)
+    const unsigned char* chp,
+    std::auto_ptr<L1MuGMTReadoutCollection>& gmtrc)
 {
 
-  LogDebug("L1GlobalTriggerRawToDigi")
+    LogDebug("L1GlobalTriggerRawToDigi")
     << "\nUnpacking GMT collection.\n"
     << std::endl;
 
-  const unsigned* p = (const unsigned*) chp;
+    const unsigned* p = (const unsigned*) chp;
 
-  // min Bx's in the event, computed after m_totalBxInEvent is obtained from GTFE block
-  // assume symmetrical number of BX around L1Accept
-  int iBxInEvent = (m_totalBxInEvent + 1)/2 - m_totalBxInEvent;
+    // min Bx's in the event, computed after m_totalBxInEvent is obtained from GTFE block
+    // assume symmetrical number of BX around L1Accept
+    int iBxInEvent = (m_totalBxInEvent + 1)/2 - m_totalBxInEvent;
 
-  for (int iGmtRec = 0; iGmtRec < m_totalBxInEvent; ++iGmtRec) {
+    for (int iGmtRec = 0; iGmtRec < m_totalBxInEvent; ++iGmtRec) {
 
-    // unpack only bxInEvent requested, otherwise skip it
-    if (
-        (iGmtRec >= m_lowSkipBxInEvent) &&
-        (iGmtRec <  m_uppSkipBxInEvent) ) {
+        // unpack only bxInEvent requested, otherwise skip it
+        if (
+            (iGmtRec >= m_lowSkipBxInEvent) &&
+            (iGmtRec <  m_uppSkipBxInEvent) ) {
 
-      // Dump the block
-      const boost::uint64_t* bp =
-        reinterpret_cast<boost::uint64_t*>(const_cast<unsigned char*>(chp));
-      for(int iWord=0; iWord<17; iWord++) {
-        LogTrace("L1GlobalTriggerRawToDigi")
-          << std::setw(4) << iWord << "  "
-          << std::hex << std::setfill('0')
-          << std::setw(16) << *bp++
-          << std::dec << std::setfill(' ')
-          << std::endl;
-      }
-	
-      L1MuGMTReadoutRecord gmtrr(iBxInEvent);
-	
-      gmtrr.setEvNr((*p)&0xffffff);
-      gmtrr.setBCERR(((*p)>>24)&0xff);
-      p++;
-	
-      gmtrr.setBxNr((*p)&0xfff);
-      if(((*p)>>15)&1) {
-        gmtrr.setBxInEvent((((*p)>>12)&7)-8);
-      } else {
-        gmtrr.setBxInEvent((((*p)>>12)&7));
-      }
-      // to do: check here the block length and the board id
-      p++;
-	
-      for(int im=0; im<16; im++) {
-        // flip the pt and quality bits -- this should better be done by GMT input chips
-        unsigned waux = *p++;
-        unsigned waux2 = ~((waux>>8)&0xff);
-        waux = (waux&0xff00ff) | (waux2<<8);
-        gmtrr.setInputCand(im,waux);
-      }
-	
-      unsigned char* prank = (unsigned char*) (p+12);
-	
-      for(int im=0; im<4; im++) {
-        gmtrr.setGMTBrlCand(im, *p++, *prank++);
-      }
-	
-      for(int im=0; im<4; im++) {
-        gmtrr.setGMTFwdCand(im, *p++, *prank++);
-      }
-	
-      for(int im=0; im<4; im++) {
-        gmtrr.setGMTCand(im, *p++);
-      }
-	
-      // skip the two sort rank words and two chip BX words
-      p+=4;
-	
-      gmtrc->addRecord(gmtrr);
+            // Dump the block
+            const boost::uint64_t* bp =
+                reinterpret_cast<boost::uint64_t*>(const_cast<unsigned char*>(chp));
+            for(int iWord=0; iWord<17; iWord++) {
+                LogTrace("L1GlobalTriggerRawToDigi")
+                << std::setw(4) << iWord << "  "
+                << std::hex << std::setfill('0')
+                << std::setw(16) << *bp++
+                << std::dec << std::setfill(' ')
+                << std::endl;
+            }
+
+            L1MuGMTReadoutRecord gmtrr(iBxInEvent);
+
+            gmtrr.setEvNr((*p)&0xffffff);
+            gmtrr.setBCERR(((*p)>>24)&0xff);
+            p++;
+
+            gmtrr.setBxNr((*p)&0xfff);
+            if(((*p)>>15)&1) {
+                gmtrr.setBxInEvent((((*p)>>12)&7)-8);
+            } else {
+                gmtrr.setBxInEvent((((*p)>>12)&7));
+            }
+            // to do: check here the block length and the board id
+            p++;
+
+            for(int im=0; im<16; im++) {
+                // flip the pt and quality bits -- this should better be done by GMT input chips
+                unsigned waux = *p++;
+                unsigned waux2 = ~((waux>>8)&0xff);
+                waux = (waux&0xff00ff) | (waux2<<8);
+                gmtrr.setInputCand(im,waux);
+            }
+
+            unsigned char* prank = (unsigned char*) (p+12);
+
+            for(int im=0; im<4; im++) {
+                gmtrr.setGMTBrlCand(im, *p++, *prank++);
+            }
+
+            for(int im=0; im<4; im++) {
+                gmtrr.setGMTFwdCand(im, *p++, *prank++);
+            }
+
+            for(int im=0; im<4; im++) {
+                gmtrr.setGMTCand(im, *p++);
+            }
+
+            // skip the two sort rank words and two chip BX words
+            p+=4;
+
+            gmtrc->addRecord(gmtrr);
+
+        }
+
+        // increase the BxInEvent number
+        iBxInEvent++;
 
     }
-
-    // increase the BxInEvent number
-    iBxInEvent++;
-        
-  }
 }
 
 // unpack trailer word
@@ -821,13 +847,66 @@ void L1GlobalTriggerRawToDigi::unpackTrailer(
     // print the trailer info
     if ( edm::isDebugEnabled() ) {
 
+        const boost::uint64_t* payload =
+            reinterpret_cast<boost::uint64_t*>(const_cast<unsigned char*>(trlPtr));
+
         std::ostringstream myCoutStream;
 
-        myCoutStream << "   Event_length:  " << cmsTrailer.lenght() << std::endl;
-        myCoutStream << "   CRC:           " << cmsTrailer.crc() << std::endl;
-        myCoutStream << "   Event_stat:    " << cmsTrailer.evtStatus() << std::endl;
-        myCoutStream << "   TTS_bits:      " << cmsTrailer.ttsBits() << std::endl;
-        myCoutStream << "   More trailers: " << cmsTrailer.moreTrailers() << std::endl;
+        // one word only
+        int iWord = 0;
+
+        myCoutStream
+        << std::setw(4) << iWord << "  "
+        << std::hex << std::setfill('0')
+        << std::setw(16) << payload[iWord]
+        << std::dec << std::setfill(' ') << "\n"
+        << std::endl;
+
+        myCoutStream
+        << "  Event_length:  "
+        << std::hex << " hex: " << ""
+        << std::setw(6) << std::setfill('0') << cmsTrailer.lenght()
+        << std::setfill(' ')
+        << std::dec << " dec: "
+        << cmsTrailer.lenght()
+        << std::endl;
+
+        myCoutStream
+        << "  CRC:           "
+        << std::hex << " hex: " << "  "
+        << std::setw(4) << std::setfill('0') << cmsTrailer.crc()
+        << std::setfill(' ')
+        << std::dec << " dec: "
+        << cmsTrailer.crc()
+        << std::endl;
+
+        myCoutStream
+        << "  Event_status:  "
+        << std::hex << " hex: " << "    "
+        << std::setw(2) << std::setfill('0') << cmsTrailer.evtStatus()
+        << std::setfill(' ')
+        << std::dec << " dec: "
+        << cmsTrailer.evtStatus()
+        << std::endl;
+
+        myCoutStream
+        << "  TTS_bits:      "
+        << std::hex << " hex: " << "     "
+        << std::setw(1) << std::setfill('0') << cmsTrailer.ttsBits()
+        << std::setfill(' ')
+        << std::dec << " dec: "
+        << cmsTrailer.ttsBits()
+        << std::endl;
+
+        myCoutStream
+        << "  More trailers: "
+        << std::hex << " hex: " << "     "
+        << std::setw(1) << std::setfill('0') << cmsTrailer.moreTrailers()
+        << std::setfill(' ')
+        << std::dec << " dec: "
+        << cmsTrailer.moreTrailers()
+        << std::endl;
+
         LogDebug("L1GlobalTriggerRawToDigi")
         << "\n CMS Trailer \n" << myCoutStream.str() << "\n"
         << std::endl;

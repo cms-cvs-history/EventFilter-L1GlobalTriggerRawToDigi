@@ -66,11 +66,6 @@ private:
     /// unpack header
     void unpackHeader(const unsigned char*, FEDHeader&);
 
-    /// unpack the GTFE block
-    /// gives the number of bunch crosses in the event, as well as the active boards
-    /// records for inactive boards are not written in the GT DAQ record
-    void unpackGTFE(const edm::EventSetup&, const unsigned char*, L1GtfeWord*);
-
     /// unpack PSB blocks
     /// unpacking is done in PSB class format
     /// methods are given later to translate from the PSB format
@@ -98,6 +93,10 @@ private:
 
     /// input tags for GT DAQ record
     edm::InputTag m_daqGtInputTag;
+    
+    /// FED Id for GT DAQ record
+    /// default value defined in DataFormats/FEDRawData/src/FEDNumbering.cc
+    int m_daqGtFedId;  
 
     /// mask for active boards
     boost::uint16_t m_activeBoardsMaskGt;

@@ -64,11 +64,6 @@ private:
     /// unpack header
     void unpackHeader(const unsigned char*, FEDHeader&);
 
-    /// unpack the GTFE block
-    /// gives the number of bunch crosses in the event, as well as the active boards
-    /// records for inactive boards are not written in the GT EVM record
-    void unpackGTFE(const edm::EventSetup&, const unsigned char*, L1GtfeExtWord*);
-
     /// unpack TCS block
     void unpackTCS(const edm::EventSetup&, const unsigned char*, L1TcsWord&);
 
@@ -90,7 +85,11 @@ private:
 
     /// input tags for GT EVM record
     edm::InputTag m_evmGtInputTag;
-
+    
+    /// FED Id for GT EVM record
+    /// default value defined in DataFormats/FEDRawData/src/FEDNumbering.cc
+    int m_evmGtFedId;  
+    
     /// mask for active boards
     boost::uint16_t m_activeBoardsMaskGt;
 

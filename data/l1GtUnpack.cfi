@@ -1,9 +1,13 @@
 module l1GtUnpack = L1GlobalTriggerRawToDigi {
  
     // input tag for GT readout collection: 
-    //     ???????? = hardware record, 
+    //     source = hardware record, 
     //     l1GtPack = GT packer (DigiToRaw) 
     untracked InputTag DaqGtInputTag = l1GtPack
+
+    // FED Id for GT DAQ record 
+    // default value defined in DataFormats/FEDRawData/src/FEDNumbering.cc
+    untracked int32 DaqGtFedId = 813
     
     /// mask for active boards (actually 16 bits)
     //      if bit is zero, the corresponding board will not be unpacked

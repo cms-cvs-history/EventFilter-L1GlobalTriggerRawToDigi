@@ -1,14 +1,14 @@
 module l1GtPack = L1GTDigiToRaw {
  
     // input tag for GT readout record: 
-    //     L1GtEmul   = GT emulator, 
-    //     l1GtUnpack = GT unpacker 
-    untracked InputTag DaqGtInputTag = L1GtEmul
+    //     l1GtEmulDigis   = GT emulator, 
+    //     l1GtUnpack      = GT unpacker 
+    untracked InputTag DaqGtInputTag = l1GtEmulDigis
     
     // input tag for GMT readout collection: 
-    //     gmt        = GMT emulator, 
-    //     l1GtUnpack = GT unpacker 
-    untracked InputTag MuGmtInputTag = gmt
+    //     l1GmtEmulDigis = GMT emulator, 
+    //     l1GtUnpack     = GT unpacker 
+    untracked InputTag MuGmtInputTag = l1GmtEmulDigis
 
     /// mask for active boards (actually 16 bits)
     //      if bit is zero, the corresponding board will not be packed

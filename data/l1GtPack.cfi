@@ -1,5 +1,9 @@
 module l1GtPack = L1GTDigiToRaw {
  
+    // FED Id for GT DAQ record 
+    // default value defined in DataFormats/FEDRawData/src/FEDNumbering.cc
+    untracked int32 DaqGtFedId = 813
+
     // input tag for GT readout record: 
     //     l1GtEmulDigis   = GT emulator, 
     //     l1GtUnpack      = GT unpacker 

@@ -11,9 +11,10 @@ module l1GtTextToRaw = L1GtTextToRaw {
 	// the module is using a EmptySource source
     untracked string TextFileName = "testGt_TextToRaw_source.txt"
 
-    // FED Id
-    untracked int32 FedId = 813
-        
+    // FED Id for GT DAQ record 
+    // default value defined in DataFormats/FEDRawData/src/FEDNumbering.cc
+    untracked int32 DaqGtFedId = 813
+
     // FED raw data size (in 8bits units, including header and trailer)
     // If negative value, the size is retrieved from the trailer.    
     untracked int32 RawDataSize = 872

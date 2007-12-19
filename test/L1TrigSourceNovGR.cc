@@ -13,7 +13,7 @@
 //
 // Original Author:  Ivan Mikulec
 //         Created:  Tue Dec 11 15:54:04 CET 2007
-// $Id$
+// $Id: L1TrigSourceNovGR.cc,v 1.1 2007/12/11 17:37:51 imikulec Exp $
 //
 //
 
@@ -142,10 +142,10 @@ L1TrigSourceNovGR::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
      bool hcal_bot = false;
      const L1GtPsbWord psb = gtrr->gtPsbWord(0xbb0d,ibx);
      std::vector<int> valid_phi;
-     if((psb.aData(4)&0x3f) > 1) {valid_phi.push_back( (psb.aData(4)>>10)&0x1f ); }
-     if((psb.bData(4)&0x3f) > 1) {valid_phi.push_back( (psb.bData(4)>>10)&0x1f ); }
-     if((psb.aData(5)&0x3f) > 1) {valid_phi.push_back( (psb.aData(5)>>10)&0x1f ); }
-     if((psb.bData(5)&0x3f) > 1) {valid_phi.push_back( (psb.bData(5)>>10)&0x1f ); }
+     if((psb.aData(4)&0x3f) >= 1) {valid_phi.push_back( (psb.aData(4)>>10)&0x1f ); }
+     if((psb.bData(4)&0x3f) >= 1) {valid_phi.push_back( (psb.bData(4)>>10)&0x1f ); }
+     if((psb.aData(5)&0x3f) >= 1) {valid_phi.push_back( (psb.aData(5)>>10)&0x1f ); }
+     if((psb.bData(5)&0x3f) >= 1) {valid_phi.push_back( (psb.bData(5)>>10)&0x1f ); }
      std::vector<int>::const_iterator iphi;
      for(iphi=valid_phi.begin(); iphi!=valid_phi.end(); iphi++) {
        std::cout << "Found HCAL mip with phi=" << *iphi << " in bx wrt. L1A = " << ibx << std::endl;

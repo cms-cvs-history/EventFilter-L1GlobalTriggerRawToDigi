@@ -7,7 +7,7 @@ module l1GtPack = L1GTDigiToRaw {
     // input tag for GT readout record: 
     //     l1GtEmulDigis   = GT emulator, 
     //     l1GtUnpack      = GT unpacker 
-    untracked InputTag DaqGtInputTag = l1GtEmulDigis
+    untracked InputTag DaqGtInputTag = gtDigis
     
     // input tag for GMT readout collection: 
     //     l1GmtEmulDigis = GMT emulator, 

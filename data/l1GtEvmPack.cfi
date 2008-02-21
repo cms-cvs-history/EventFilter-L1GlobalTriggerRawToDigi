@@ -7,7 +7,7 @@ module l1GtEvmPack = L1GTEvmDigiToRaw {
     // input tag for GT readout record: 
     //     l1GtEmulDigis   = GT emulator, 
     //     l1GtEvmUnpack   = GT EVM unpacker 
-    untracked InputTag EvmGtInputTag = l1GtEmulDigis
+    untracked InputTag EvmGtInputTag = gtDigis
     
 
     /// mask for active boards (actually 16 bits)

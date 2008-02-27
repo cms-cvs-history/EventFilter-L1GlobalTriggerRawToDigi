@@ -1,0 +1,9 @@
+module l1GtRecord = L1GlobalTriggerRecordProducer {
+ 
+    // InputTag for the L1 Global Trigger DAQ readout record
+    //   GT Emulator = gtDigis
+    //   GT Unpacker = gtDigis
+    //
+    InputTag L1GtReadoutRecordTag = gtDigis
+
+}

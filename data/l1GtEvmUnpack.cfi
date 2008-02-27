@@ -5,7 +5,7 @@ module l1GtEvmUnpack = L1GlobalTriggerEvmRawToDigi {
     // input tag for GT EVM record: 
     //     source = hardware record, 
     //     l1GtEvmPack = GT EVM packer (DigiToRaw) 
-    untracked InputTag EvmGtInputTag = l1GtEvmPack
+    InputTag EvmGtInputTag = l1GtEvmPack
     
     // FED Id for GT EVM record 
     // default value defined in DataFormats/FEDRawData/src/FEDNumbering.cc

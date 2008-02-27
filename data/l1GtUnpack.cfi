@@ -3,7 +3,7 @@ module l1GtUnpack = L1GlobalTriggerRawToDigi {
     // input tag for GT readout collection: 
     //     source = hardware record, 
     //     l1GtPack = GT packer (DigiToRaw) 
-    untracked InputTag DaqGtInputTag = l1GtPack
+    InputTag DaqGtInputTag = l1GtPack
 
     // FED Id for GT DAQ record 
     // default value defined in DataFormats/FEDRawData/src/FEDNumbering.cc

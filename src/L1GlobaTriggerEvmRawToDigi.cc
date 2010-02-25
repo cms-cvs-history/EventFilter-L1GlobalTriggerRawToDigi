@@ -38,7 +38,7 @@
 #include "DataFormats/L1GlobalTrigger/interface/L1GtFdlWord.h"
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
-#include "FWCore/ParameterSet/interface/InputTag.h"
+#include "FWCore/Utilities/interface/InputTag.h"
 
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/MessageLogger/interface/MessageDrop.h"
@@ -185,11 +185,7 @@ void L1GlobalTriggerEvmRawToDigi::produce(edm::Event& iEvent, const edm::EventSe
                     << "\nQuit unpacking this event" << std::endl;
         }
 
-        std::auto_ptr<L1GlobalTriggerEvmReadoutRecord> gtReadoutRecord(
-                new L1GlobalTriggerEvmReadoutRecord());
-
-        // put empty records into event
-        iEvent.put(gtReadoutRecord);
+        produceEmptyProducts(iEvent);
 
         return;
     }
@@ -202,18 +198,36 @@ void L1GlobalTriggerEvmRawToDigi::produce(edm::Event& iEvent, const edm::EventSe
     // get a const pointer to the beginning of the data buffer
     const unsigned char* ptrGt = raw.data();
 
+    // get a const pointer to the end of the data buffer
+    const unsigned char* endPtrGt = ptrGt + gtSize;
+
     //
     if (m_verbosity && m_isDebugEnabled) {
 
+        LogTrace("L1GlobalTriggerEvmRawToDigi") << "\n Size of raw data: "
+                << gtSize << "\n" << std::endl;
+
         std::ostringstream myCoutStream;
         dumpFedRawData(ptrGt, gtSize, myCoutStream);
-        LogTrace("L1GlobalTriggerEvmRawToDigi") << "\n Size of raw data: " << gtSize << "\n"
-                << "\n Dump FEDRawData\n" << myCoutStream.str() << "\n" << std::endl;
+
+        LogTrace("L1GlobalTriggerEvmRawToDigi") << "\n Dump FEDRawData\n"
+                << myCoutStream.str() << "\n" << std::endl;
 
     }
 
     // unpack header
     int headerSize = 8;
+
+    if ((ptrGt + headerSize) > endPtrGt) {
+        edm::LogError("L1GlobalTriggerEvmRawToDigi")
+                << "\nError: Pointer after header greater than end pointer."
+                << "\n Put empty products in the event!"
+                << "\n Quit unpacking this event." << std::endl;
+
+        produceEmptyProducts(iEvent);
+
+        return;
+    }
 
     FEDHeader cmsHeader(ptrGt);
     FEDTrailer cmsTrailer(ptrGt + gtSize - headerSize);
@@ -283,11 +297,7 @@ void L1GlobalTriggerEvmRawToDigi::produce(edm::Event& iEvent, const edm::EventSe
                             << "\nQuit unpacking this event" << std::endl;
                 }
 
-                std::auto_ptr<L1GlobalTriggerEvmReadoutRecord> gtReadoutRecord(
-                        new L1GlobalTriggerEvmReadoutRecord());
-
-                // put empty records into event
-                iEvent.put(gtReadoutRecord);
+                produceEmptyProducts(iEvent);
 
                 return;
 
@@ -306,11 +316,7 @@ void L1GlobalTriggerEvmRawToDigi::produce(edm::Event& iEvent, const edm::EventSe
                     << "\nQuit unpacking this event" << std::endl;
         }
 
-        std::auto_ptr<L1GlobalTriggerEvmReadoutRecord> gtReadoutRecord(
-                new L1GlobalTriggerEvmReadoutRecord());
-
-        // put empty records into event
-        iEvent.put(gtReadoutRecord);
+        produceEmptyProducts(iEvent);
 
         return;
     }
@@ -536,10 +542,31 @@ void L1GlobalTriggerEvmRawToDigi::produce(edm::Event& iEvent, const edm::EventSe
         switch (itBoard->gtBoardType()) {
 
             case TCS: {
+
+                // if pointer after TCS payload is greater than pointer at
+                // the end of GT payload, produce empty products and quit unpacking
+                if ((ptrGt + m_tcsWord->getSize()) > endPtrGt) {
+                    edm::LogError("L1GlobalTriggerEvmRawToDigi")
+                            << "\nError: Pointer after TCS "
+                            << " greater than end pointer."
+                            << "\n Put empty products in the event!"
+                            << "\n Quit unpacking this event." << std::endl;
+
+                    produceEmptyProducts(iEvent);
+
+                    return;
+                }
+
                 // unpack only if requested, otherwise skip it
                 if (activeBoardToUnpack) {
 
                     m_tcsWord->unpack(ptrGt);
+
+                    // add 1 to the GT luminosity number to use the same convention as
+                    // offline, where LS number starts with 1;
+                    // in GT hardware, LS starts with 0
+                    boost::uint16_t lsNr = m_tcsWord->luminositySegmentNr() + 1;
+                    m_tcsWord->setLuminositySegmentNr(lsNr);
 
                     // add TCS block to GT EVM readout record
                     gtReadoutRecord->setTcsWord(*m_tcsWord);
@@ -563,6 +590,20 @@ void L1GlobalTriggerEvmRawToDigi::produce(edm::Event& iEvent, const edm::EventSe
             case FDL: {
                 for (int iFdl = 0; iFdl < m_totalBxInEvent; ++iFdl) {
 
+                    // if pointer after FDL payload is greater than pointer at
+                    // the end of GT payload, produce empty products and quit unpacking
+                    if ((ptrGt + m_gtFdlWord->getSize()) > endPtrGt) {
+                        edm::LogError("L1GlobalTriggerEvmRawToDigi")
+                                << "\nError: Pointer after FDL " << iFdl
+                                << " greater than end pointer."
+                                << "\n Put empty products in the event!"
+                                << "\n Quit unpacking this event." << std::endl;
+
+                        produceEmptyProducts(iEvent);
+
+                        return;
+                    }
+
                     // unpack only if requested, otherwise skip it
                     if (activeBoardToUnpack) {
 
@@ -570,6 +611,12 @@ void L1GlobalTriggerEvmRawToDigi::produce(edm::Event& iEvent, const edm::EventSe
                         if ( ( iFdl >= m_lowSkipBxInEvent ) && ( iFdl < m_uppSkipBxInEvent )) {
 
                             m_gtFdlWord->unpack(ptrGt);
+
+                            // add 1 to the GT luminosity number to use the same convention as
+                            // offline, where LS number starts with 1;
+                            // in GT hardware, LS starts with 0
+                            boost::uint16_t lsNr = m_gtFdlWord->lumiSegmentNr() + 1;
+                            m_gtFdlWord->setLumiSegmentNr(lsNr);
 
                             // add FDL block to GT readout record
                             gtReadoutRecord->setGtFdlWord(*m_gtFdlWord);
@@ -615,6 +662,23 @@ void L1GlobalTriggerEvmRawToDigi::produce(edm::Event& iEvent, const edm::EventSe
     m_gtfeWord->reset();
 
     // unpack trailer
+
+    int trailerSize = 8;
+
+    // if pointer after trailer is greater than pointer at
+    // the end of GT payload, produce empty products and quit unpacking
+    if ((ptrGt + trailerSize) > endPtrGt) {
+        edm::LogError("L1GlobalTriggerEvmRawToDigi")
+                << "\nError: Pointer after trailer "
+                << " greater than end pointer."
+                << "\n Put empty products in the event!"
+                << "\n Quit unpacking this event." << std::endl;
+
+        produceEmptyProducts(iEvent);
+
+        return;
+    }
+
     unpackTrailer(ptrGt, cmsTrailer);
 
     if (m_verbosity && m_isDebugEnabled) {
@@ -727,6 +791,17 @@ void L1GlobalTriggerEvmRawToDigi::unpackTrailer(const unsigned char* trlPtr, FED
 
     }
 
+}
+
+// produce empty products in case of problems
+void L1GlobalTriggerEvmRawToDigi::produceEmptyProducts(edm::Event& iEvent) {
+
+    std::auto_ptr<L1GlobalTriggerEvmReadoutRecord> gtReadoutRecord(
+            new L1GlobalTriggerEvmReadoutRecord());
+
+    // put empty records into event
+
+    iEvent.put(gtReadoutRecord);
 }
 
 // dump FED raw data
